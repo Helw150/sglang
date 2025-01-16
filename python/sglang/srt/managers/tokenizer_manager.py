@@ -40,6 +40,9 @@ from sglang.srt.managers.image_processor import (
     get_dummy_image_processor,
     get_image_processor,
 )
+from sglang.srt.managers.audio_processor import (
+    get_dummy_audio_processor,
+)
 from sglang.srt.managers.io_struct import (
     AbortReq,
     BatchEmbeddingOut,
@@ -144,6 +147,9 @@ class TokenizerManager:
 
         # Create image processor placeholder
         self.image_processor = get_dummy_image_processor()
+
+        # Create image processor placeholder
+        self.audio_processor = get_dummy_audio_processor()
 
         # Create tokenizer
         if server_args.skip_tokenizer_init:
@@ -284,6 +290,13 @@ class TokenizerManager:
             )
             if image_inputs and "input_ids" in image_inputs:
                 input_ids = image_inputs["input_ids"]
+
+            audio_inputs: Dict = await self.audio_processor.process_audio_async(
+                obj.audio_data, input_ids or input_text, obj
+            )
+            if audio_inputs and "input_ids" in audio_inputs:
+                input_ids = audio_inputs["input_ids"]
+
             return_logprob = obj.return_logprob
             logprob_start_len = obj.logprob_start_len
             top_logprobs_num = obj.top_logprobs_num
@@ -309,6 +322,7 @@ class TokenizerManager:
                 input_text,
                 input_ids,
                 image_inputs,
+                audio_inputs,
                 sampling_params,
                 return_logprob,
                 logprob_start_len,

@@ -70,8 +70,11 @@ class Conversation:
     stop_str: Union[str, List[str]] = None
     # The string that represents an image token in the prompt
     image_token: str = "<image>"
+    # The string that represents an image token in the prompt
+    audio_token: str = "<audio>"
 
     image_data: Optional[List[str]] = None
+    audio_data: Optional[List[str]] = None
     modalities: Optional[List[str]] = None
 
     def get_prompt(self) -> str:
@@ -290,6 +293,10 @@ class Conversation:
         """Append a new message."""
         self.image_data.append(image)
 
+    def append_audio(self, audio: str):
+        """Append a new message."""
+        self.audio_data.append(audio)
+
     def update_last_message(self, message: str):
         """Update the last output.
 
@@ -382,6 +389,7 @@ def generate_chat_conv(
         sep2=conv.sep2,
         stop_str=conv.stop_str,
         image_data=[],
+        audio_data=[],
         modalities=[],
         image_token=conv.image_token,
     )
@@ -414,6 +422,8 @@ def generate_chat_conv(
                     if content.type == "image_url":
                         num_image_url += 1
                         conv.modalities.append(content.modalities)
+                    elif content.type == "audio":
+                        conv.modalities.append(content.modalities)
                 if num_image_url > 1:
                     image_token = conv.image_token
                 else:
@@ -422,6 +432,7 @@ def generate_chat_conv(
                         if conv.name != "qwen2-vl"
                         else conv.image_token
                     )
+
                 for content in message.content:
                     if content.type == "text":
                         if num_image_url > 16:
@@ -431,6 +442,9 @@ def generate_chat_conv(
                         # NOTE: Only works for llava
                         real_content += image_token
                         conv.append_image(content.image_url.url)
+                    elif content.type == "audio":
+                        real_content += conv.audio_token
+                        conv.append_audio(content.audio_url)
                 conv.append_message(conv.roles[0], real_content)
         elif msg_role == "assistant":
             parsed_content = ""

@@ -449,6 +449,28 @@ def load_image(image_file: Union[str, bytes]):
     return image, image_size
 
 
+def load_audio(audio_file: Union[str, bytes]):
+    import soundfile as sf
+
+    if isinstance(audio_file, bytes):
+        audio_data, sample_rate = sf.read(BytesIO(audio_file))
+    elif audio_file.startswith(("http://", "https://")):
+        timeout = int(os.getenv("REQUEST_TIMEOUT", "3"))
+        response = requests.get(audio_file, timeout=timeout)
+        audio_data, sample_rate = sf.read(BytesIO(response.content))
+    elif audio_file.lower().endswith(("wav", "mp3", "ogg", "flac")):
+        audio_data, sample_rate = sf.read(audio_file)
+    elif audio_file.startswith("data:"):
+        audio_file = audio_file.split(",")[1]
+        audio_data, sample_rate = sf.read(BytesIO(base64.b64decode(audio_file)))
+    elif isinstance(audio_file, str):
+        audio_data, sample_rate = sf.read(BytesIO(base64.b64decode(audio_file)))
+    else:
+        raise ValueError(f"Invalid audio: {audio_file}")
+
+    return audio_data, sample_rate
+
+
 def suppress_other_loggers():
     from vllm.logger import logger as vllm_default_logger
 
